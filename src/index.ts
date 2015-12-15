@@ -239,7 +239,7 @@ function removeMessageFilter(handler: IMessageHandler, filter: IMessageFilter): 
  */
 export
 function clearMessageData(handler: IMessageHandler): void {
-  var dispatcher = dispatcherMap.get(handler);
+  let dispatcher = dispatcherMap.get(handler);
   if (dispatcher) dispatcher.clear();
   dispatchQueue.removeAll(handler);
 }
@@ -260,13 +260,13 @@ var dispatchQueue = new Queue<IMessageHandler>();
 /**
  * The internal animation frame id for the message loop wake up call.
  */
-var frameId: any = void 0;
+let frameId: any = void 0;
 
 
 /**
  * A local reference to an event loop hook.
  */
-var raf: (cb: () => void) => any;
+let raf: (cb: () => void) => any;
 if (typeof requestAnimationFrame === 'function') {
   raf = requestAnimationFrame;
 } else {
@@ -278,7 +278,7 @@ if (typeof requestAnimationFrame === 'function') {
  * Get or create the message dispatcher for a message handler.
  */
 function getDispatcher(handler: IMessageHandler): MessageDispatcher {
-  var dispatcher = dispatcherMap.get(handler);
+  let dispatcher = dispatcherMap.get(handler);
   if (dispatcher) return dispatcher;
   dispatcher = new MessageDispatcher();
   dispatcherMap.set(handler, dispatcher);
@@ -325,7 +325,7 @@ function runMessageLoop(): void {
   // another loop is scheduled. Otherwise, the pending message is
   // dispatched to the message handler.
   while (!dispatchQueue.empty) {
-    var handler = dispatchQueue.pop();
+    let handler = dispatchQueue.pop();
     if (handler === null) {
       wakeUpMessageLoop();
       return;
@@ -450,8 +450,8 @@ class MessageDispatcher {
    * Remove all occurrences of a message filter from the dispatcher.
    */
   removeMessageFilter(filter: IMessageFilter): void {
-    var link = this._filters;
-    var prev: IFilterLink = null;
+    let link = this._filters;
+    let prev: IFilterLink = null;
     while (link !== null) {
       if (link.filter === filter) {
         link.filter = null;
@@ -478,7 +478,7 @@ class MessageDispatcher {
     if (this._messages) {
       this._messages.clear();
     }
-    for (var link = this._filters; link !== null; link = link.next) {
+    for (let link = this._filters; link !== null; link = link.next) {
       link.filter = null;
     }
     this._filters = null;
@@ -490,7 +490,7 @@ class MessageDispatcher {
    * Returns `true` if the message was filtered, `false` otherwise.
    */
   private _filterMessage(handler: IMessageHandler, msg: Message): boolean {
-    for (var link = this._filters; link !== null; link = link.next) {
+    for (let link = this._filters; link !== null; link = link.next) {
       if (link.filter && safeFilter(link.filter, handler, msg)) {
         return true;
       }

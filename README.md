@@ -107,7 +107,7 @@ class Handler implements IMessageHandler {
   }
 }
 
-var handler = new Handler();
+let handler = new Handler();
 sendMessage(handler, new Message('one'));    // logs 'one'
 sendMessage(handler, new Message('two'));	 // logs 'two'
 sendMessage(handler, new Message('three'));  // logs 'three'
@@ -159,7 +159,7 @@ class ValueHandler extends Handler {
 }
 
 
-var handler = new ValueHandler();
+let handler = new ValueHandler();
 sendMessage(handler, new Message('one'));    // logs 'one'
 postMessage(handler, new Message('two'));
 sendMessage(handler, new ValueMessage(42));  // logs 42
@@ -193,7 +193,7 @@ class ExpensiveWorker extends Handler {
 }
 
 
-var handler = new ExpensiveWorker();
+let handler = new ExpensiveWorker();
 postMessage(handler, new Message('one'));
 postMessage(handler, new Message('expensive'));
 postMessage(handler, new Message('two'));
@@ -248,9 +248,9 @@ class FilterTwo implements IMessageFilter {
 }
 
 
-var handler = new Handler();
-var spy = new MessageSpy();
-var filter = new FilterTwo();
+let handler = new Handler();
+let spy = new MessageSpy();
+let filter = new FilterTwo();
 
 sendMessage(handler, new Message('two'));  // logs 'two'
 
