@@ -43,6 +43,32 @@ class CompressHandler extends Handler {
 }
 
 
+class BadHandler implements IMessageHandler {
+
+  processMessage(msg: Message): void {
+    throw new Error('process error');
+  }
+}
+
+
+class BadCompressor implements IMessageHandler {
+
+  compressMessage(msg: Message, pending: Queue<Message>): boolean {
+    throw new Error('compress error');
+  }
+
+  processMessage(msg: Message): void { }
+}
+
+
+class BadFilter implements IMessageFilter {
+
+  filterMessage(handler: IMessageHandler, msg: Message): boolean {
+    throw new Error('filter error');
+  }
+}
+
+
 class GlobalHandler extends Handler {
 
   static messages: string[] = [];
@@ -111,7 +137,7 @@ describe('phosphor-messaging', () => {
 
       it('should be read only', () => {
         let msg = new Message('test');
-        expect(() => { msg.type = 'other' }).to.throwException();
+        expect(() => { msg.type = 'other' }).to.throwError();
       });
 
     });
@@ -278,6 +304,20 @@ describe('phosphor-messaging', () => {
       expect(filter3.messages).to.eql(['one', 'two', 'three']);
     });
 
+    it('should ignore exceptions in handlers', () => {
+      let handler = new BadHandler();
+      let msg = new Message('one');
+      expect(() => { sendMessage(handler, msg); }).to.not.throwError();
+    });
+
+    it('should ignore exceptions in handlers', () => {
+      let handler = new Handler();
+      let filter = new BadFilter();
+      let msg = new Message('one');
+      installMessageFilter(handler, filter);
+      expect(() => { sendMessage(handler, msg); }).to.not.throwError();
+    });
+
   });
 
   describe('postMessage()', () => {
@@ -333,6 +373,15 @@ describe('phosphor-messaging', () => {
         expect(handler3.messages).to.eql(['one', 'C']);
         done();
       });
+    });
+
+    it('should ignore exceptions in compressors', () => {
+      let handler = new BadCompressor();
+      let msg = new Message('one');
+      expect(() => {
+        postMessage(handler, msg);
+        postMessage(handler, msg);
+      }).to.not.throwError();
     });
 
   });

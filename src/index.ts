@@ -317,12 +317,8 @@ function runMessageLoop(): void {
   // Add a null sentinel value to the end of the queue. The queue
   // will only be processed up to the first null value. This means
   // that messages posted during this cycle will execute on the next
-  // cycle of the loop. If the last value in the array is null, it
-  // means that an exception was thrown by a message handler and the
-  // loop had to be restarted.
-  if (dispatchQueue.back !== null) {
-    dispatchQueue.push(null);
-  }
+  // cycle of the loop.
+  dispatchQueue.push(null);
 
   // The message dispatch loop. If the dispatcher is the null sentinel,
   // the processing of the current block of messages is complete and
@@ -334,24 +330,54 @@ function runMessageLoop(): void {
       wakeUpMessageLoop();
       return;
     }
-    dispatchMessage(dispatcherMap.get(handler), handler);
+    getDispatcher(handler).sendPendingMessage(handler);
   }
 }
 
 
 /**
- * Safely process the pending handler message.
+ * Safely process a message for a message handler.
  *
- * If the message handler throws an exception, the message loop will
- * be restarted and the exception will be rethrown.
+ * If the handler throws an exception, it will be caught and logged.
  */
-function dispatchMessage(dispatcher: MessageDispatcher, handler: IMessageHandler): void {
+function safeProcess(handler: IMessageHandler, msg: Message): void {
   try {
-    dispatcher.sendPendingMessage(handler);
-  } catch (ex) {
-    wakeUpMessageLoop();
-    throw ex;
+    handler.processMessage(msg);
+  } catch (err) {
+    console.error(err);
   }
+}
+
+
+/**
+ * Safely compress a message for a message handler.
+ *
+ * If the handler throws an exception, it will be caught and logged.
+ */
+function safeCompress(handler: IMessageHandler, msg: Message, queue: Queue<Message>): boolean {
+  let result = false;
+  try {
+    result = handler.compressMessage(msg, queue);
+  } catch (err) {
+    console.error(err);
+  }
+  return result;
+}
+
+
+/**
+ * Safely filter a message for a message handler.
+ *
+ * If the filter throws an exception, it will be caught and logged.
+ */
+function safeFilter(filter: IMessageFilter, handler: IMessageHandler, msg: Message): boolean {
+  let result = false;
+  try {
+    result = filter.filterMessage(handler, msg);
+  } catch (err) {
+    console.error(err);
+  }
+  return result;
 }
 
 
@@ -382,7 +408,7 @@ class MessageDispatcher {
    */
   sendMessage(handler: IMessageHandler, msg: Message): void {
     if (!this._filterMessage(handler, msg)) {
-      handler.processMessage(msg);
+      safeProcess(handler, msg);
     }
   }
 
@@ -465,7 +491,7 @@ class MessageDispatcher {
    */
   private _filterMessage(handler: IMessageHandler, msg: Message): boolean {
     for (var link = this._filters; link !== null; link = link.next) {
-      if (link.filter && link.filter.filterMessage(handler, msg)) {
+      if (link.filter && safeFilter(link.filter, handler, msg)) {
         return true;
       }
     }
@@ -484,7 +510,7 @@ class MessageDispatcher {
     if (!this._messages || this._messages.empty) {
       return false;
     }
-    return handler.compressMessage(msg, this._messages);
+    return safeCompress(handler, msg, this._messages);
   }
 
   /**
