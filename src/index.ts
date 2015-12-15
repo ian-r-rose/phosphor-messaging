@@ -517,9 +517,16 @@ class MessageDispatcher {
    * Enqueue the message for future delivery to the handler.
    */
   private _enqueueMessage(handler: IMessageHandler, msg: Message): void {
-    (this._messages || (this._messages = new Queue<Message>())).push(msg);
+    this._ensureMessages().push(msg);
     dispatchQueue.push(handler);
     wakeUpMessageLoop();
+  }
+
+  /**
+   * Get the internal message queue, creating it if needed.
+   */
+  private _ensureMessages(): Queue<Message> {
+    return this._messages || (this._messages = new Queue<Message>());
   }
 
   private _filters: IFilterLink = null;
